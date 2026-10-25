@@ -1,0 +1,793 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer utilities {
+  .text-mega {
+    font-size: 21vw;
+    line-height: 0.75;
+    letter-spacing: -0.04em;
+  }
+}
+
+html, body {
+  background-color: #fcfcfc;
+  color: #111111;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+::selection {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.cinema-stage {
+  min-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .cinema-stage {
+    min-width: 1100px;
+  }
+}
+
+.cinema-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.075;
+  mix-blend-mode: multiply;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(17, 17, 17, 0.12) 0, rgba(17, 17, 17, 0.12) 1px, transparent 1px, transparent 4px),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+  animation: cinema-flicker 0.22s steps(2) infinite;
+}
+
+.cinema-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: multiply;
+}
+
+.cinema-particle {
+  position: absolute;
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: #111;
+  filter: blur(0.4px);
+}
+
+.cinema-cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(17, 17, 17, 0.72);
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  color: #fff;
+  transition: width 180ms ease, height 180ms ease, border-color 180ms ease;
+}
+
+.cinema-cursor::before,
+.cinema-cursor::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+
+.cinema-cursor::before {
+  width: 4px;
+  height: 4px;
+  top: 7px;
+  left: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.cinema-cursor::after {
+  width: 30px;
+  height: 1px;
+  left: -6px;
+  top: 9px;
+  background: rgba(17,17,17,.4);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.cinema-cursor.is-interactive {
+  width: 34px;
+  height: 34px;
+  border-color: rgba(17, 17, 17, 0.92);
+}
+
+.cinema-cursor.is-interactive::after {
+  opacity: 1;
+}
+
+.cinema-scene-card {
+  position: fixed;
+  right: 32px;
+  bottom: 28px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+  color: #111;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.cinema-scene-kicker,
+.cinema-scene-name {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+}
+
+.cinema-scene-kicker {
+  color: rgba(17, 17, 17, 0.42);
+}
+
+.cinema-scene-name {
+  color: rgba(17, 17, 17, 0.76);
+}
+
+.cinema-scene-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.cinema-scene-dots span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(17, 17, 17, 0.18);
+  transition: background 300ms ease, width 300ms ease;
+}
+
+.cinema-scene-dots span.is-active {
+  width: 34px;
+  background: #111;
+}
+
+.analysis-section {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  min-height: 560px;
+  border: 1px solid #242424;
+}
+
+.analysis-viewport {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, #161616 0, #0a0a0a 62%);
+  border-right: 1px solid #242424;
+}
+
+.analysis-grid-lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image: linear-gradient(rgba(255,255,255,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.22) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
+}
+
+.analysis-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+  box-shadow: 0 0 26px rgba(255,255,255,.4);
+}
+
+.analysis-specimen {
+  position: absolute;
+  inset: 8% 6%;
+  width: 88%;
+  height: 84%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: contrast(1.04) saturate(.72);
+}
+
+.analysis-callout {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+}
+
+.analysis-callout span {
+  width: 12px;
+  height: 12px;
+  display: block;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 5px rgba(255,255,255,.08);
+}
+
+.analysis-corner-label {
+  position: absolute;
+  left: 24px;
+  bottom: 22px;
+  color: rgba(255,255,255,.42);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+}
+
+.analysis-data-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px;
+}
+
+.analysis-live-dot::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 7px 1px 0;
+  border-radius: 999px;
+  background: #d7ff3f;
+  box-shadow: 0 0 10px #d7ff3f;
+  animation: cinema-pulse 1.2s ease-in-out infinite;
+}
+
+.analysis-stage-button {
+  width: 34px;
+  height: 28px;
+  border: 1px solid #383838;
+  color: #666;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  cursor: pointer;
+  transition: color 250ms ease, background 250ms ease, border 250ms ease;
+}
+
+.analysis-stage-button:hover,
+.analysis-stage-button.is-active {
+  color: #0a0a0a;
+  background: #fff;
+  border-color: #fff;
+}
+
+.analysis-timeline-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  padding-top: 22px;
+}
+
+.analysis-timeline-track::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #383838;
+}
+
+.analysis-time-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #777;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.analysis-time-node span {
+  position: absolute;
+  top: -27px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #999;
+  background: #0a0a0a;
+  border-radius: 999px;
+}
+
+.geological-viewport {
+  position: relative;
+  min-height: 300px;
+  overflow: hidden;
+  border: 1px solid #38332d;
+  background-color: #11100e;
+}
+
+.geological-viewport::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: .24;
+  background-image: repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,255,255,.08) 23px, transparent 24px);
+}
+
+.geological-sediment-stack {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 28px;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 98px;
+}
+
+.geological-sediment-layer {
+  position: relative;
+  flex: 1;
+  height: 28px;
+  border: 1px solid rgba(255,255,255,.18);
+  transform-origin: bottom center;
+  transition: height 500ms ease, border-color 500ms ease;
+}
+
+.geological-sediment-layer:nth-child(2) { height: 42px; }
+.geological-sediment-layer:nth-child(3) { height: 55px; }
+.geological-sediment-layer:nth-child(4) { height: 69px; }
+.geological-sediment-layer:nth-child(5) { height: 84px; }
+.geological-sediment-layer:nth-child(6) { height: 98px; }
+
+.geological-sediment-layer::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  opacity: .3;
+  background: repeating-linear-gradient(0deg, transparent 0 8px, rgba(17,17,17,.4) 9px 10px);
+}
+
+.geological-sediment-layer.is-active {
+  border-color: #f0e7d8;
+  box-shadow: 0 0 24px rgba(240,231,216,.14);
+}
+
+.geological-reading-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  width: 1px;
+  background: #f0e7d8;
+  box-shadow: 0 0 18px rgba(240,231,216,.8);
+}
+
+.geological-epoch-card {
+  position: absolute;
+  top: 42px;
+  left: 42px;
+  z-index: 4;
+  max-width: 460px;
+}
+
+.geological-epoch-date {
+  display: block;
+  margin-bottom: 10px;
+  color: #c9b79d;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+}
+
+.geological-epoch-card strong {
+  display: block;
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: 500;
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.geological-epoch-card p {
+  max-width: 300px;
+  margin-top: 16px;
+  color: #8d8983;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.geological-pterosaur {
+  position: absolute;
+  right: 7%;
+  bottom: 34px;
+  z-index: 4;
+  width: 330px;
+  max-height: 180px;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: sepia(.45) saturate(.7) contrast(1.05);
+}
+
+.geological-plate-code {
+  position: absolute;
+  right: 28px;
+  top: 26px;
+  z-index: 4;
+  color: rgba(255,255,255,.42);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+}
+
+.geological-track {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.geological-time-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 56px;
+  padding: 12px 10px;
+  border-top: 1px solid #393632;
+  color: #6f6c68;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-align: left;
+  cursor: pointer;
+  transition: color 250ms ease, border-color 250ms ease, background 250ms ease;
+}
+
+.geological-time-button small {
+  color: #494743;
+  font-size: 8px;
+  letter-spacing: .06em;
+}
+
+.geological-time-button:hover,
+.geological-time-button.is-active {
+  border-color: #f0e7d8;
+  color: #fff;
+  background: rgba(255,255,255,.04);
+}
+
+.geological-time-button.is-active small {
+  color: #c9b79d;
+}
+
+.observatory-catalog-label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.observatory-section {
+  background: #0b0b0b;
+  color: #fff;
+}
+
+.observatory-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+  min-height: 620px;
+  border: 1px solid #332d25;
+}
+
+.observatory-canvas-wrap {
+  position: relative;
+  min-height: 620px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, #272119 0, #121110 38%, #0b0b0b 75%);
+  border-right: 1px solid #332d25;
+}
+
+.observatory-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 620px;
+}
+
+.observatory-canvas-wrap::before,
+.observatory-canvas-wrap::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  inset: 12%;
+  border: 1px solid rgba(221, 198, 162, 0.14);
+  border-radius: 50%;
+  transform: rotate(-18deg) skewX(-12deg);
+}
+
+.observatory-canvas-wrap::after {
+  inset: 20% 8%;
+  transform: rotate(28deg) skewX(18deg);
+  border-color: rgba(221, 198, 162, 0.08);
+}
+
+.observatory-readout {
+  position: absolute;
+  z-index: 2;
+  color: rgba(221, 198, 162, 0.62);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .18em;
+}
+
+.observatory-readout-top {
+  top: 24px;
+  left: 28px;
+}
+
+.observatory-readout-bottom {
+  bottom: 24px;
+  left: 28px;
+}
+
+.observatory-axis {
+  position: absolute;
+  right: 28px;
+  bottom: 24px;
+  display: flex;
+  gap: 8px;
+  color: rgba(221, 198, 162, .58);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.observatory-specimen-label {
+  position: absolute;
+  right: 28px;
+  top: 28px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 146px;
+  padding: 12px 14px;
+  border: 1px solid rgba(221, 198, 162, .42);
+  background: rgba(221, 198, 162, .9);
+  color: #1b1610;
+  transform: rotate(-2deg);
+  box-shadow: 4px 4px 0 rgba(0,0,0,.18);
+}
+
+.observatory-specimen-label span,
+.observatory-specimen-label small {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .12em;
+}
+
+.observatory-specimen-label strong {
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+
+.observatory-scale-ruler {
+  position: absolute;
+  left: 28px;
+  bottom: 26px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  color: rgba(255,255,255,.62);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .12em;
+}
+
+.observatory-scale-ruler i {
+  display: block;
+  width: 72px;
+  height: 8px;
+  border: 1px solid rgba(255,255,255,.58);
+  border-top: 0;
+}
+
+.observatory-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px;
+  background: rgba(15, 13, 10, .65);
+}
+
+.observatory-mode-block {
+  padding: 20px 0 5px;
+  border-bottom: 1px solid #2b2824;
+}
+
+.observatory-mode-kicker {
+  display: block;
+  margin-bottom: 10px;
+  color: #716b63;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.observatory-mode-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.observatory-mode-buttons button {
+  padding: 8px 9px;
+  border: 1px solid #4a4033;
+  color: #9f896b;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: background 220ms ease, color 220ms ease, border-color 220ms ease;
+}
+
+.observatory-mode-buttons button:hover,
+.observatory-mode-buttons button.is-active {
+  border-color: #ddc6a2;
+  background: #ddc6a2;
+  color: #15110d;
+}
+
+.observatory-live::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 7px 1px 0;
+  border-radius: 999px;
+  background: #ddc6a2;
+  box-shadow: 0 0 10px #ddc6a2;
+  animation: cinema-pulse 1.2s ease-in-out infinite;
+}
+
+.observatory-point-button {
+  width: 42px;
+  height: 32px;
+  border: 1px solid #5a4a37;
+  color: #9f896b;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  cursor: pointer;
+  transition: background 250ms ease, border 250ms ease, color 250ms ease;
+}
+
+.observatory-point-button:hover,
+.observatory-point-button.is-active {
+  border-color: #ddc6a2;
+  background: #ddc6a2;
+  color: #15110d;
+}
+
+.closing-section {
+  position: relative;
+  min-height: 680px;
+  overflow: hidden;
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.closing-section::before {
+  content: 'NHM';
+  position: absolute;
+  right: -2vw;
+  bottom: -8vw;
+  color: rgba(255,255,255,.025);
+  font-size: 33vw;
+  font-weight: 700;
+  letter-spacing: -.12em;
+  line-height: .7;
+}
+
+.closing-index {
+  position: relative;
+  z-index: 1;
+  color: #c9b79d;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.closing-title {
+  position: relative;
+  z-index: 1;
+  max-width: 980px;
+  margin-top: 80px;
+  color: #f4eadc;
+  font-size: clamp(3rem, 8vw, 8.6rem);
+  font-weight: 400;
+  letter-spacing: -.07em;
+  line-height: .9;
+  text-transform: uppercase;
+}
+
+.closing-rule {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 1px;
+  margin-top: 100px;
+  background: #3c3833;
+}
+
+.closing-signature {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 24px;
+  color: #756f68;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+}
+
+.closing-signature strong {
+  color: #f4eadc;
+  font-family: var(--font-sans);
+  font-size: 54px;
+  font-weight: 600;
+  letter-spacing: -.1em;
+  line-height: .7;
+}
+
+@keyframes cinema-pulse {
+  0%, 100% { opacity: .35; transform: scale(.85); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes cinema-flicker {
+  0% { opacity: 0.07; }
+  45% { opacity: 0.09; }
+  100% { opacity: 0.06; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinema-noise,
+  .cinema-particle {
+    animation: none !important;
+  }
+}
