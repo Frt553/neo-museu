@@ -162,8 +162,8 @@ function SandTransitionImage({
       <img
         src={src}
         alt={alt}
-        crossOrigin="anonymous"
-        referrerPolicy="no-referrer"
+        loading="eager"
+        decoding="async"
         style={{
           filter: progress > 0.002 ? `url(#${filterId})` : 'none',
           opacity: opacity,
@@ -702,19 +702,11 @@ function SpecimenAnalysis() {
 }
 
 export default function App() {
-  const [showVideo, setShowVideo] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const [activeChapter, setActiveChapter] = useState(2); // starts at "Répteis do Mesozoico"
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedSpecimenModal, setSelectedSpecimenModal] = useState(false);
   const [infoModal, setInfoModal] = useState<string | null>(null);
-
-  // Video delay of 2800ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowVideo(true);
-    }, 2800);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Chapter auto-cycling every 3500ms
   useEffect(() => {
@@ -739,26 +731,35 @@ export default function App() {
           SECTION 1: HERO (full viewport height)
       ========================================================================= */}
       <section className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden">
-        {/* 1D. BACKGROUND VIDEO */}
-        {showVideo && (
-          <motion.div
+        {/* 1D. BACKGROUND HERO MEDIA: INSTANT POSTER + VIDEO LOOP */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+          {/* Instant high-res dinosaur image so the screen is never blank */}
+          <motion.img
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 0.9, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            src="/assets/neo-museum/01.png"
+            alt="Tiranossauro Rex Fóssil"
+            className="absolute right-[-8%] md:right-[3%] top-1/2 -translate-y-1/2 w-[95%] md:w-[68%] max-h-[82vh] object-contain select-none"
+          />
+          {/* Background Loop Video (fades in as soon as it's ready) */}
+          <motion.video
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.5 }}
-            className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
-          >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-              src="/assets/neo-museum/museum-loop.mp4"
-            />
-            {/* Subtle overlay to ensure typography readability */}
-            <div className="absolute inset-0 bg-[#fcfcfc]/30 pointer-events-none" />
-          </motion.div>
-        )}
+            animate={{ opacity: videoLoaded ? 1 : 0 }}
+            transition={{ duration: 1.2 }}
+            onCanPlay={() => setVideoLoaded(true)}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            poster="/assets/neo-museum/01.png"
+            className="w-full h-full object-cover absolute inset-0"
+            src="/assets/neo-museum/museum-loop.mp4"
+          />
+          {/* Subtle overlay to ensure typography readability */}
+          <div className="absolute inset-0 bg-[#fcfcfc]/25 pointer-events-none" />
+        </div>
 
         {/* 1A. HEADER (NHM Logo) & 1B. SUB-NAV BAR */}
         <motion.header
